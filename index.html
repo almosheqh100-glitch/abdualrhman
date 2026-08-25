@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>محول العملات - تحديث تلقائي</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --accent: #6366f1;
+    --accent2: #8b5cf6;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --green: #22c55e;
+    --red: #ef4444;
+    --border: #334155;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at top, #1e293b, #0f172a);
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    color: var(--text);
+    padding: 20px;
+  }
+  .card {
+    width: 100%;
+    max-width: 480px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+  }
+  h1 {
+    font-size: 22px;
+    margin: 0 0 6px;
+    text-align: center;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .status {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 20px;
+    min-height: 16px;
+  }
+  .status.live::before {
+    content: "●";
+    color: var(--green);
+    margin-left: 6px;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .field {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  label {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  input, select {
+    background: #0f172a;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 15px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  input:focus, select:focus {
+    border-color: var(--accent);
+  }
+  .swap-btn {
+    display: flex;
+    justify-content: center;
+    margin: -4px 0 14px;
+  }
+  .swap-btn button {
+    background: var(--accent);
+    border: none;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    transition: transform .2s, background .2s;
+  }
+  .swap-btn button:hover {
+    background: var(--accent2);
+    transform: rotate(180deg);
+  }
+  .result {
+    background: #0f172a;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+    margin-bottom: 14px;
+  }
+  .result .value {
+    font-size: 28px;
+    font-weight: 700;
+  }
+  .result .rate-line {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .trend {
+    font-weight: bold;
+    font-size: 13px;
+  }
+  .trend.up { color: var(--green); }
+  .trend.down { color: var(--red); }
+  .trend.flat { color: var(--muted); }
+  .footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .footer-row select {
+    padding: 6px 8px;
+    font-size: 12px;
+    width: auto;
+  }
+  .refresh-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background .2s;
+  }
+  .refresh-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .error {
+    color: var(--red);
+    font-size: 12px;
+    text-align: center;
+    margin-top: 8px;
+    min-height: 14px;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>محول العملات</h1>
+  <div class="status" id="status">جاري تحميل الأسعار...</div>
+
+  <div class="row">
+    <div class="field">
+      <label for="amount">المبلغ</label>
+      <input type="number" id="amount" value="1" min="0" step="any">
+    </div>
+    <div class="field">
+      <label for="from">من عملة</label>
+      <select id="from"></select>
+    </div>
+  </div>
+
+  <div class="swap-btn">
+    <button id="swap" title="تبديل العملات">⇅</button>
+  </div>
+
+  <div class="row" style="margin-bottom: 4px;">
+    <div class="field">
+      <label for="to">إلى عملة</label>
+      <select id="to"></select>
+    </div>
+  </div>
+
+  <div class="result">
+    <div class="value" id="resultValue">--</div>
+    <div class="rate-line">
+      <span id="rateText">--</span>
+      <span class="trend flat" id="trendIcon"></span>
+    </div>
+  </div>
+
+  <div class="footer-row">
+    <span>يتحدّث كل:
+      <select id="intervalSelect">
+        <option value="15">15 ثانية</option>
+        <option value="30" selected>30 ثانية</option>
+        <option value="60">دقيقة</option>
+        <option value="300">5 دقائق</option>
+      </select>
+    </span>
+    <button class="refresh-btn" id="manualRefresh">تحديث الآن</button>
+  </div>
+
+  <div class="error" id="errorBox"></div>
+</div>
+
+<script>
+const API = "https://api.exchangerate-api.com/v4/latest/";
+const statusEl = document.getElementById('status');
+const fromSel = document.getElementById('from');
+const toSel = document.getElementById('to');
+const amountEl = document.getElementById('amount');
+const resultValueEl = document.getElementById('resultValue');
+const rateTextEl = document.getElementById('rateText');
+const trendIconEl = document.getElementById('trendIcon');
+const errorBox = document.getElementById('errorBox');
+const intervalSelect = document.getElementById('intervalSelect');
+const manualRefreshBtn = document.getElementById('manualRefresh');
+const swapBtn = document.getElementById('swap');
+
+let rates = {};
+let previousRate = null;
+let timer = null;
+
+const popularCurrencies = ["USD","EUR","GBP","SAR","AED","EGP","KWD","JOD","QAR","BHD","OMR","TRY","JPY","CNY","CAD","AUD","CHF","INR","MAD","DZD","TND","LYD","IQD"];
+
+function populateSelect(select, selected) {
+  select.innerHTML = "";
+  const list = Object.keys(rates).length ? Object.keys(rates) : popularCurrencies;
+  const ordered = [...new Set([...popularCurrencies.filter(c => list.includes(c)), ...list])];
+  ordered.forEach(code => {
+    const opt = document.createElement('option');
+    opt.value = code;
+    opt.textContent = code;
+    if (code === selected) opt.selected = true;
+    select.appendChild(opt);
+  });
+}
+
+async function fetchRates(base) {
+  try {
+    statusEl.textContent = "جاري التحديث...";
+    statusEl.classList.remove('live');
+    const res = await fetch(API + base);
+    if (!res.ok) throw new Error("فشل الاتصال بمزود الأسعار");
+    const data = await res.json();
+    rates = data.rates;
+    errorBox.textContent = "";
+    const now = new Date();
+    statusEl.textContent = "آخر تحديث: " + now.toLocaleTimeString('ar-EG');
+    statusEl.classList.add('live');
+    return true;
+  } catch (e) {
+    errorBox.textContent = "تعذّر جلب الأسعار حالياً، سيُعاد المحاولة لاحقاً.";
+    statusEl.textContent = "غير متصل";
+    statusEl.classList.remove('live');
+    return false;
+  }
+}
+
+function convert() {
+  const amount = parseFloat(amountEl.value) || 0;
+  const from = fromSel.value;
+  const to = toSel.value;
+
+  if (!rates[to]) {
+    resultValueEl.textContent = "--";
+    return;
+  }
+
+  const rate = rates[to];
+  const converted = amount * rate;
+
+  resultValueEl.textContent = converted.toLocaleString('ar-EG', {maximumFractionDigits: 4}) + " " + to;
+  rateTextEl.textContent = "1 " + from + " = " + rate.toLocaleString('ar-EG', {maximumFractionDigits: 6}) + " " + to;
+
+  if (previousRate !== null) {
+    if (rate > previousRate) {
+      trendIconEl.textContent = "▲ ارتفاع";
+      trendIconEl.className = "trend up";
+    } else if (rate < previousRate) {
+      trendIconEl.textContent = "▼ انخفاض";
+      trendIconEl.className = "trend down";
+    } else {
+      trendIconEl.textContent = "= ثابت";
+      trendIconEl.className = "trend flat";
+    }
+  }
+  previousRate = rate;
+}
+
+async function refreshAll() {
+  const from = fromSel.value || "USD";
+  const ok = await fetchRates(from);
+  if (ok) convert();
+}
+
+function startAutoRefresh() {
+  if (timer) clearInterval(timer);
+  const seconds = parseInt(intervalSelect.value, 10);
+  timer = setInterval(refreshAll, seconds * 1000);
+}
+
+async function init() {
+  populateSelect(fromSel, "USD");
+  populateSelect(toSel, "EUR");
+  await fetchRates("USD");
+  populateSelect(fromSel, "USD");
+  populateSelect(toSel, "EUR");
+  convert();
+  startAutoRefresh();
+}
+
+fromSel.addEventListener('change', refreshAll);
+toSel.addEventListener('change', convert);
+amountEl.addEventListener('input', convert);
+manualRefreshBtn.addEventListener('click', refreshAll);
+intervalSelect.addEventListener('change', startAutoRefresh);
+swapBtn.addEventListener('click', () => {
+  const tmp = fromSel.value;
+  fromSel.value = toSel.value;
+  toSel.value = tmp;
+  refreshAll();
+});
+
+init();
+</script>
+</body>
+</html>
