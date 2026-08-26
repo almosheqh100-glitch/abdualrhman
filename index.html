@@ -243,19 +243,82 @@ let rates = {};
 let previousRate = null;
 let timer = null;
 
-const popularCurrencies = ["USD","EUR","GBP","SAR","AED","EGP","KWD","JOD","QAR","BHD","OMR","TRY","JPY","CNY","CAD","AUD","CHF","INR","MAD","DZD","TND","LYD","IQD"];
+const popularCurrencies = ["USD","EUR","GBP","SAR","AED","EGP","KWD","JOD","QAR","BHD","OMR","TRY","JPY","CNY","CAD","AUD","CHF","INR","MAD","DZD","TND","LYD","IQD","SYP","YER","SDG","SOS","MRU","DJF","KMF"];
+
+const currencyNamesAr = {
+  USD: "دولار أمريكي",
+  EUR: "يورو",
+  GBP: "جنيه إسترليني",
+  SAR: "ريال سعودي",
+  AED: "درهم إماراتي",
+  EGP: "جنيه مصري",
+  KWD: "دينار كويتي",
+  JOD: "دينار أردني",
+  QAR: "ريال قطري",
+  BHD: "دينار بحريني",
+  OMR: "ريال عماني",
+  TRY: "ليرة تركية",
+  JPY: "ين ياباني",
+  CNY: "يوان صيني",
+  CAD: "دولار كندي",
+  AUD: "دولار أسترالي",
+  CHF: "فرنك سويسري",
+  INR: "روبية هندية",
+  MAD: "درهم مغربي",
+  DZD: "دينار جزائري",
+  TND: "دينار تونسي",
+  LYD: "دينار ليبي",
+  IQD: "دينار عراقي",
+  SYP: "ليرة سورية",
+  YER: "ريال يمني",
+  SDG: "جنيه سوداني",
+  SOS: "شلن صومالي",
+  MRU: "أوقية موريتانية",
+  DJF: "فرنك جيبوتي",
+  KMF: "فرنك قمري",
+  RUB: "روبل روسي",
+  BRL: "ريال برازيلي",
+  MXN: "بيزو مكسيكي",
+  ZAR: "راند جنوب أفريقي",
+  SEK: "كرونة سويدية",
+  NOK: "كرونة نرويجية",
+  DKK: "كرونة دنماركية",
+  PLN: "زلوتي بولندي",
+  THB: "بات تايلاندي",
+  IDR: "روبية إندونيسية",
+  MYR: "رينغيت ماليزي",
+  SGD: "دولار سنغافوري",
+  KRW: "وون كوري جنوبي",
+  NZD: "دولار نيوزيلندي",
+  ILS: "شيكل إسرائيلي",
+  PKR: "روبية باكستانية",
+  BDT: "تاكا بنغلاديشية",
+  NGN: "نايرا نيجيرية",
+  ETB: "بير إثيوبي",
+  KES: "شلن كيني"
+};
+
+function currencyLabel(code) {
+  const name = currencyNamesAr[code];
+  return name ? (name + " (" + code + ")") : code;
+}
 
 function populateSelect(select, selected) {
+  const prevValue = select.value;
   select.innerHTML = "";
   const list = Object.keys(rates).length ? Object.keys(rates) : popularCurrencies;
   const ordered = [...new Set([...popularCurrencies.filter(c => list.includes(c)), ...list])];
   ordered.forEach(code => {
     const opt = document.createElement('option');
     opt.value = code;
-    opt.textContent = code;
-    if (code === selected) opt.selected = true;
+    opt.textContent = currencyLabel(code);
     select.appendChild(opt);
   });
+  if (selected && ordered.includes(selected)) {
+    select.value = selected;
+  } else if (ordered.includes(prevValue)) {
+    select.value = prevValue;
+  }
 }
 
 async function fetchRates(base) {
@@ -292,8 +355,8 @@ function convert() {
   const rate = rates[to];
   const converted = amount * rate;
 
-  resultValueEl.textContent = converted.toLocaleString('ar-EG', {maximumFractionDigits: 4}) + " " + to;
-  rateTextEl.textContent = "1 " + from + " = " + rate.toLocaleString('ar-EG', {maximumFractionDigits: 6}) + " " + to;
+  resultValueEl.textContent = converted.toLocaleString('ar-EG', {maximumFractionDigits: 4}) + " " + (currencyNamesAr[to] || to);
+  rateTextEl.textContent = "1 " + (currencyNamesAr[from] || from) + " = " + rate.toLocaleString('ar-EG', {maximumFractionDigits: 6}) + " " + (currencyNamesAr[to] || to);
 
   if (previousRate !== null) {
     if (rate > previousRate) {
@@ -348,3 +411,4 @@ init();
 </script>
 </body>
 </html>
+  
